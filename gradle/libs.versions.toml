@@ -1,0 +1,16 @@
+[versions]
+agp = "9.3.1"
+kotlin = "2.4.10"
+shizuku = "13.1.5"
+junit = "4.13.2"
+
+[libraries]
+halone-plugin-sdk = { group = "dev.halone", name = "plugin-sdk", version = "0.1.0" }
+shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
+shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

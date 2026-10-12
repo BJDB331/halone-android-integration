@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_name">Halone Android Integration</string>
+    <string name="list_name">Android Apps</string>
+    <string name="list_description">Apps installed on the phone</string>
+    <string name="search_hint">Search apps</string>
+    <string name="no_apps">No apps found</string>
+    <string name="menu_open">Open</string>
+    <string name="menu_add_home">Add to Home</string>
+    <string name="menu_remove_home">Remove from Home</string>
+
+    <string name="notice_no_shizuku_title">Shizuku is needed</string>
+    <string name="notice_no_shizuku_body">Install Shizuku on the phone, or Sui on a rooted phone, to show phone apps here.</string>
+    <string name="notice_not_running_title">Shizuku isn\'t running</string>
+    <string name="notice_not_running_body">Start Shizuku on the phone, and this window opens the app.</string>
+    <string name="notice_permission_title">Allow access</string>
+    <string name="notice_permission_body">Tap here, then allow Halone Android Integration in Shizuku\'s prompt on the phone.</string>
+    <string name="notice_denied_title">Access was denied</string>
+    <string name="notice_denied_body">Allow Halone Android Integration in the Shizuku app on the phone, then tap here.</string>
+    <string name="notice_starting_title">Starting…</string>
+    <string name="notice_starting_body"></string>
+    <string name="notice_failed_title">%1$s couldn\'t open</string>
+
+    <string name="wifi_settings">Wi-Fi</string>
+    <string name="mobile_settings">Mobile networks</string>
+    <string name="bluetooth_settings">Bluetooth</string>
+    <string name="status_bluetooth_off">Bluetooth: off</string>
+    <string name="status_bluetooth_on">Bluetooth: on</string>
+    <string name="status_bluetooth_connected">Bluetooth: connected</string>
+    <string name="status_wifi">Wi-Fi: %1$s</string>
+    <string name="status_mobile">Mobile: %1$s</string>
+    <string-array name="signal_levels">
+        <item>none</item>
+        <item>weak</item>
+        <item>fair</item>
+        <item>good</item>
+        <item>strong</item>
+    </string-array>
+
+    <string name="setup_intro">This plugin shows the phone\'s apps on the glasses in Halone, in Android Apps. Turn it on in Halone\'s Settings → Plugins, and give it the access below.</string>
+    <string name="setup_shizuku_title">Shizuku</string>
+    <string name="setup_shizuku_ready">Connected. Phone apps can open on the glasses.</string>
+    <string name="setup_shizuku_missing">Shizuku isn\'t installed. It lets this plugin show other apps on the glasses (with root, Sui works too).</string>
+    <string name="setup_shizuku_stopped">Shizuku isn\'t running. Start it in the Shizuku app; it has to be started again after the phone restarts.</string>
+    <string name="setup_shizuku_ask">Shizuku is running, but this plugin isn\'t allowed to use it yet.</string>
+    <string name="setup_shizuku_denied">Access was denied. Allow Halone Android Integration in the Shizuku app.</string>
+    <string name="setup_bluetooth_title">Bluetooth</string>
+    <string name="setup_bluetooth_ready">Allowed. The dock shows when a device is connected.</string>
+    <string name="setup_bluetooth_ask">Allow access to nearby devices so the dock can show when a Bluetooth device is connected.</string>
+    <string name="setup_bluetooth_blocked">Access to nearby devices was denied. Allow it in the app\'s settings.</string>
+    <string name="setup_launcher_title">App drawer</string>
+    <string name="setup_launcher_shown">This screen has an icon in the phone\'s app drawer. Hidden, it still opens from the app\'s info page in Settings.</string>
+    <string name="setup_launcher_hidden">Hidden from the app drawer. Open this screen again from Settings → Apps → Halone Android Integration.</string>
+    <string name="setup_hide_launcher">Hide from the app drawer</string>
+    <string name="setup_show_launcher">Show in the app drawer</string>
+    <string name="setup_allow">Allow</string>
+    <string name="setup_get_shizuku">Get Shizuku</string>
+    <string name="setup_open_shizuku">Open Shizuku</string>
+    <string name="setup_open_settings">Open settings</string>
+</resources>
