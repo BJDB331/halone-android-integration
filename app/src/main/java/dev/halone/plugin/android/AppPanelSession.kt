@@ -15,6 +15,8 @@ class AppPanelSession(
     private val provider: AndroidAppsProvider,
     private val label: String,
     private val launch: Intent,
+    /** The app's id, to list it in Recents with a still of its window; null for a settings screen. */
+    private val recentId: String? = null,
 ) : PanelSession() {
     private val privileged get() = provider.privileged
     private val main = Handler(Looper.getMainLooper())
@@ -22,9 +24,14 @@ class AppPanelSession(
     private var displayId = NO_DISPLAY
     private var displayService: IDisplayService? = null
     private var card: NoticeCard? = null
+    private var emptied = false
     private val onPrivilegedChanged: () -> Unit = { connect() }
     private val displayCallbacks = object : Privileged.DisplayCallbacks {
-        override fun onEmptied() = host.close()
+        override fun onEmptied() {
+            // Nothing left to show: keep the last still rather than an empty display's.
+            emptied = true
+            host.close()
+        }
 
         override fun onOrientationRequested(orientation: Int) {
             val landscape = widthPx > heightPx
@@ -37,6 +44,27 @@ class AppPanelSession(
         }
     }
     private val applyResize = Runnable { call { it.resizeDisplay(displayId, widthPx, heightPx, displayDpi()) } }
+
+    /** A still for Recents now and then while the app shows, and once more as the window closes. */
+    private val takePreview = object : Runnable {
+        override fun run() {
+            capturePreview()
+            if (displayId != NO_DISPLAY) main.postDelayed(this, PREVIEW_INTERVAL_MS)
+        }
+    }
+
+    private fun capturePreview() {
+        val id = recentId ?: return
+        val display = displayId.takeIf { it != NO_DISPLAY } ?: return
+        val service = displayService ?: return
+        try {
+            service.captureDisplay(display, PREVIEW_SIZE_PX)?.let { provider.recents.preview(id, it) }
+        } catch (e: RemoteException) {
+            Log.w(TAG, "preview", e)
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "preview", e)
+        }
+    }
 
     override fun onAttach(surface: Surface) {
         host.setTitle(label)
@@ -63,6 +91,8 @@ class AppPanelSession(
     override fun onClose() {
         privileged.removeListener(onPrivilegedChanged)
         main.removeCallbacks(applyResize)
+        main.removeCallbacks(takePreview)
+        if (!emptied) capturePreview()
         card?.release()
         card = null
         releaseDisplay()
@@ -109,7 +139,13 @@ class AppPanelSession(
             displayService = service
             privileged.watchDisplay(displayId, displayCallbacks)
             val error = service.startActivity(displayId, Intent(launch))
-            if (error != null) fail(error)
+            if (error != null) {
+                fail(error)
+            } else {
+                recentId?.let { provider.recents.opened(it, label) }
+                main.removeCallbacks(takePreview)
+                main.postDelayed(takePreview, FIRST_PREVIEW_MS)
+            }
         } catch (e: RemoteException) {
             fail(e.toString())
         } catch (e: RuntimeException) {
@@ -168,6 +204,9 @@ class AppPanelSession(
         const val TAG = "HaloneAndroidApps"
         const val NO_DISPLAY = -1
         const val RESIZE_SETTLE_MS = 400L
+        const val FIRST_PREVIEW_MS = 2_500L
+        const val PREVIEW_INTERVAL_MS = 10_000L
+        const val PREVIEW_SIZE_PX = 400
         const val MIN_SIZE_PX = 320
         const val MAX_SIZE_PX = 2560
         const val MAX_LAYOUT_PX = 1280

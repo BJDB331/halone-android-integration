@@ -142,6 +142,22 @@ class DisplayService(context: Context) : IDisplayService.Stub() {
         }
     }
 
+    private val phoneScreen by lazy { PhoneScreen(shell) }
+
+    private val capturer by lazy { runCatching { DisplayCapture() }.onFailure { Log.w(TAG, "capture unavailable", it) }.getOrNull() }
+
+    override fun phoneScreen(command: Int, token: IBinder, glassesDisplayId: Int) =
+        onMain { phoneScreen.request(command, token, glassesDisplayId) }
+
+    override fun captureDisplay(displayId: Int, maxSidePx: Int): ByteArray? {
+        // Only this service's own windows, never the phone's or the glasses' screen.
+        val display = displays[displayId] ?: return null
+        val size = maxSidePx.coerceIn(64, 800)
+        return runCatching { capturer?.jpeg(displayId, display.display.mode.physicalWidth, display.display.mode.physicalHeight, size) }
+            .onFailure { Log.w(TAG, "capture $displayId", it) }
+            .getOrNull()
+    }
+
     override fun contextClick(displayId: Int, x: Float, y: Float) {
         val now = SystemClock.uptimeMillis()
         val steps = listOf(

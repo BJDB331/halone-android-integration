@@ -19,6 +19,7 @@ import android.widget.BaseAdapter
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.GridView
+import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -36,6 +37,10 @@ class AppListSession(private val provider: AndroidAppsProvider) : ViewPanelSessi
     private lateinit var root: FrameLayout
     private var menu: View? = null
     private val onListChanged: () -> Unit = { filter() }
+    private val previews = LruCache<String, Bitmap>(RecentApps.MAX)
+    private lateinit var recentStrip: View
+    private lateinit var recentRow: LinearLayout
+    private val onRecentsChanged: () -> Unit = { showRecents() }
 
     override fun onCreateView(context: Context): View {
         host.setTitle(context.getString(R.string.list_name))
@@ -78,11 +83,30 @@ class AppListSession(private val provider: AndroidAppsProvider) : ViewPanelSessi
         }
         filter()
 
+        recentRow = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        val recentTitle = TextView(context).apply {
+            text = context.getString(R.string.recent_title)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setTextColor(Color.argb(0xB3, 0xff, 0xff, 0xff))
+            setPadding(0, SPACING, 0, SPACING / 2)
+        }
+        recentStrip = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(recentTitle)
+            addView(HorizontalScrollView(context).apply {
+                isHorizontalScrollBarEnabled = false
+                addView(recentRow)
+            })
+        }
+        provider.recents.addListener(onRecentsChanged)
+        showRecents()
+
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.rgb(0x16, 0x18, 0x1d))
             setPadding(PADDING, PADDING, PADDING, 0)
             addView(search, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            addView(recentStrip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(empty, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
             addView(grid, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         }
@@ -92,8 +116,61 @@ class AppListSession(private val provider: AndroidAppsProvider) : ViewPanelSessi
 
     override fun onClose() {
         provider.listChanged -= onListChanged
+        provider.recents.removeListener(onRecentsChanged)
         iconLoader.shutdownNow()
         super.onClose()
+    }
+
+    /** Recents, newest first, each a still of its window; hidden while searching or when there are none. */
+    private fun showRecents() {
+        if (!::recentRow.isInitialized) return
+        val entries = provider.recents.entries.filter { provider.catalog.find(it.id) != null }
+        recentStrip.visibility = if (entries.isEmpty() || query.isNotEmpty()) View.GONE else View.VISIBLE
+        recentRow.removeAllViews()
+        val context = recentRow.context
+        entries.forEach { entry ->
+            val image = ImageView(context).apply {
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                background = GradientDrawable().apply {
+                    setColor(Color.rgb(0x22, 0x25, 0x2c))
+                    cornerRadius = PREVIEW_RADIUS
+                }
+                clipToOutline = true
+            }
+            val card = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(0, 0, SPACING, 0)
+                val value = TypedValue()
+                if (context.theme.resolveAttribute(android.R.attr.selectableItemBackground, value, true)) setBackgroundResource(value.resourceId)
+                addView(image, LinearLayout.LayoutParams(PREVIEW_WIDTH, PREVIEW_HEIGHT))
+                addView(TextView(context).apply {
+                    text = entry.label
+                    gravity = Gravity.CENTER
+                    maxLines = 1
+                    ellipsize = TextUtils.TruncateAt.END
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                }, LinearLayout.LayoutParams(PREVIEW_WIDTH, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = 4 })
+                setOnClickListener { provider.launchApp(entry.id) }
+            }
+            recentRow.addView(card)
+            loadPreview(entry.id, image)
+        }
+    }
+
+    private fun loadPreview(id: String, into: ImageView) {
+        val key = id + "@" + provider.recents.previewVersion(id)
+        into.tag = key
+        previews.get(key)?.let { return into.setImageBitmap(it) }
+        into.setImageDrawable(null)
+        iconLoader.execute {
+            val bitmap = provider.recents.previewOf(id) ?: provider.catalog.find(id)?.let { provider.catalog.icon(it.component, ICON_SIZE) }
+                ?: return@execute
+            main.post {
+                previews.put(key, bitmap)
+                if (into.tag == key) into.setImageBitmap(bitmap)
+            }
+        }
     }
 
     private fun filter() {
@@ -101,6 +178,7 @@ class AppListSession(private val provider: AndroidAppsProvider) : ViewPanelSessi
         shown = if (query.isEmpty()) all else all.filter { it.label.contains(query, ignoreCase = true) }
         if (::adapter.isInitialized) adapter.notifyDataSetChanged()
         if (::empty.isInitialized) empty.visibility = if (shown.isEmpty()) View.VISIBLE else View.GONE
+        showRecents()
     }
 
     /** Drawn in the panel's own views: a PopupMenu's separate window gets none of the panel's input. */
@@ -210,5 +288,8 @@ class AppListSession(private val provider: AndroidAppsProvider) : ViewPanelSessi
         const val MENU_ITEM_PADDING = 32
         const val MENU_RADIUS = 12f
         const val MENU_ELEVATION = 8f
+        const val PREVIEW_WIDTH = 96
+        const val PREVIEW_HEIGHT = 150
+        const val PREVIEW_RADIUS = 10f
     }
 }

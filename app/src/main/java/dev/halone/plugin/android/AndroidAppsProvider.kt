@@ -23,14 +23,19 @@ class AndroidAppsProvider : PanelProviderService() {
         private set
     lateinit var privileged: Privileged
         private set
+    lateinit var recents: RecentApps
+        private set
     private lateinit var signal: SignalStatus
     private lateinit var bluetooth: BluetoothStatus
 
     override fun onCreate() {
         super.onCreate()
+        running = this
         home = HomeApps(this)
+        recents = RecentApps(this)
         privileged = Privileged(this).also { it.start() }
         catalog = AppCatalog(this) {
+            recents.retain(catalog.apps.mapTo(HashSet()) { it.id })
             appsChanged()
             listChanged.toList().forEach { it() }
         }.also { it.start() }
@@ -39,6 +44,7 @@ class AndroidAppsProvider : PanelProviderService() {
     }
 
     override fun onDestroy() {
+        if (running === this) running = null
         bluetooth.stop()
         signal.stop()
         catalog.stop()
@@ -69,7 +75,7 @@ class AndroidAppsProvider : PanelProviderService() {
             .addCategory(Intent.CATEGORY_LAUNCHER)
             .setComponent(app.component)
             .addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        return AppPanelSession(this, app.label, launch)
+        return AppPanelSession(this, app.label, launch, recentId = app.id)
     }
 
     override fun onStatusItemClicked(id: String) {
@@ -87,6 +93,11 @@ class AndroidAppsProvider : PanelProviderService() {
     }
 
     companion object {
+        /** The provider while Halone has it running, for [PhoneScreenProvider]; main thread. */
+        @Volatile
+        var running: AndroidAppsProvider? = null
+            private set
+
         const val LIST = "apps"
         const val WIFI_SETTINGS = "wifi-settings"
         const val MOBILE_SETTINGS = "mobile-settings"

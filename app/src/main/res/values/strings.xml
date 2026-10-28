@@ -57,4 +57,5 @@
     <string name="setup_get_shizuku">Get Shizuku</string>
     <string name="setup_open_shizuku">Open Shizuku</string>
     <string name="setup_open_settings">Open settings</string>
+    <string name="recent_title">Recent</string>
 </resources>

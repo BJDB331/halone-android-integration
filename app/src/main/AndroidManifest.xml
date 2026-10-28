@@ -21,6 +21,8 @@
             <action android:name="android.settings.BLUETOOTH_SETTINGS" />
         </intent>
         <package android:name="moe.shizuku.privileged.api" />
+        <!-- To check that the phone screen switch is called by Halone. -->
+        <package android:name="dev.halone.app" />
     </queries>
 
     <application
@@ -62,6 +64,13 @@
                 android:name="dev.halone.plugin.CONTRACT"
                 android:value="1" />
         </service>
+
+        <!-- Halone's pad asks here to power the phone's panel off; see PhoneScreenProvider.
+             The authority is fixed: Halone names it in its own manifest. -->
+        <provider
+            android:name=".PhoneScreenProvider"
+            android:authorities="dev.halone.plugin.android.phonescreen"
+            android:exported="true" />
 
         <provider
             android:name="rikka.shizuku.ShizukuProvider"

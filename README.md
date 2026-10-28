@@ -18,6 +18,18 @@ the glasses, each in its own window, and signal meters in the dock.
 - **Dock status items**: Wi-Fi, mobile signal (only without Wi-Fi, with the
   network type, `5G`, `LTE`, when mobile data is on) and Bluetooth. Each
   opens its settings screen in a window on the glasses.
+- **Recent** at the top of Android Apps: the last ten phone apps opened on
+  the glasses, newest first, each with a still of its window. The service
+  captures only its own virtual displays (never the phone's or the glasses'
+  screen; protected content comes back empty), a few seconds after an app
+  opens, every ten seconds while it shows, and as it closes. Stills stay in
+  the app's private storage.
+- **Phone screen off** for Halone's pad: with this plugin set up, the pad's
+  screen-off button powers the phone's panel off instead of only dimming
+  Halone's window. A leased session, switched by a watchdog process of its
+  own: the panel comes back if Halone stops renewing it or dies, if the
+  glasses' display goes, or if the service dies. Only Halone may ask
+  (`PhoneScreenProvider`).
 - **Setup screen** on the phone ("Halone Android Integration"): Shizuku and
   Bluetooth access, and a switch to hide its app drawer icon. Hidden, it opens
   from the app's page in Settings → Apps.
